@@ -1,0 +1,223 @@
+#!/usr/bin/python
+
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
+DOCUMENTATION = r'''
+---
+module: {{ name }}
+
+description: {{ settings.description }}
+
+options:{% for key, value in module_options.items() %}
+    {{ key }}:
+        description: {{ value.description }}
+        type: {{ value.type }}{%if 'required' in value and value.required != None %} 
+        required: {{ value.required }}{% endif %}{% if 'required_if' in value %}
+        required_if: {{ value.required_if }}{% endif %}{%if 'choices' in value %}
+        choices: {{ value.choices }}{% endif %}{%if 'default' in value and value.default != None %} 
+        default: {{ value.default }}{% endif %}{% endfor %}
+author:
+    - Ryan Parker-Hill (@ryanph)
+'''
+
+EXAMPLES = r'''
+{{ settings.examples }}
+'''
+
+RETURN = r'''
+resource:
+    description: The {{ name }} created or updated (when state is 'present')
+changes:
+    description: Changes made to the {{ name }} (when changed is true)
+message:
+    description: The action undertaken by the module
+'''
+
+import urllib3
+import sys
+from vastsdk import ApiClient, Configuration
+from vastsdk.api import TokenApi
+from vastsdk.api import {{ settings.sdk_module }}
+from ansible.errors import AnsibleError
+from ansible.module_utils.basic import AnsibleModule
+{% if settings.param_specific_compare_funcs | length > 0 %}
+from ansible_collections.ryanph.vast.plugins.module_utils.vast_utils import {% for key, value in settings.param_specific_compare_funcs.items() %}{{ value }}{% if not loop.last %},{% endif %}{% endfor %}
+{% endif %}
+
+def run_module():
+    
+    module_args = dict({% for key, value in module_options.items() %}
+        {{key}}=dict(type='{{ value.type }}',required={{ value.required }}{%if 'default' in value and value['default'] != None %},default={{ value.default }}{% endif %}{%if 'choices' in value %},choices={{ value['choices'] }}{% endif %}{%if 'no_log' in value and value['no_log'] %},no_log=True{% endif %}){% if not loop.last %},{% endif %}{% endfor %}
+    )
+
+    # Keys that are included in comparisons by default
+    resource_keys = {{ settings.options | sort }}
+
+    # Fields that should not be compared or included in POST requests when the module parameter value is null
+    # (If these fields are not specified as an input to the module whatever the target system has will not be changed)
+    ignore_when_null_keys = {{ settings.ignore_when_null | sort }}
+
+    # Fields that should have trailing apersands not included in any comparison
+    # (When VMS local users are added the target system sometimes the API response has a trailing @, and sometimes doesn't)
+    ignore_trailing_domain_separator = {{ settings.ignore_trailing_domain_separator }}
+
+    result = dict(changed=False, message='')
+    module = AnsibleModule(
+        argument_spec=module_args,
+        supports_check_mode=True,
+        required_if=[('state', 'present', {{ required_if_options }}, True)]
+    )
+
+    # Configure the API Client and perform Authentication
+    vms_api_config = Configuration(host="https://"+module.params['vms_hostname'])
+    vms_api_config.verify_ssl = module.params['vms_verify_ssl']
+    vms_api_client = ApiClient(vms_api_config)
+    token_api_client = TokenApi(vms_api_client)
+    vms_tokens = token_api_client.create_tokens({
+        "username": module.params['vms_username'],
+        "password": module.params['vms_password']
+    })
+    vms_api_config.access_token = str(vms_tokens.access)
+
+    # Search for {{ settings.schema }} specified by the module params
+    resource_api = {{ settings.sdk_module }}(ApiClient(vms_api_config))
+    resource = resource_api.{{ settings.sdk_search_method }}({{ settings.sdk_search_param_name }}=module.params['{{ settings.sdk_search_param_value }}'])
+
+{% if settings.query_only == True %}
+    result['resource'] = resource.to_dict()
+{% else %}
+
+    # Search result sanity checking
+    if len(resource) > 1:
+        # Never more than one result
+        raise AnsibleError("Resource search method returned multiple resources (one expected)")
+    if len(resource) == 1 and not hasattr(resource[0], '{{ settings.primary_key }}'):
+        # The result must have the resource primary key ({{ settings.primary_key }}) set as an attribute
+        raise AnsibleError("Discovered resource is missing required property '{{ settings.primary_key }}'")
+    if len(resource) == 1 and resource[0].{{ settings.sdk_search_param_value }} != module.params['{{ settings.sdk_search_param_value }}']:
+        # The single returned result must have a matching value for '{{ settings.sdk_search_param_value }}'
+        raise AnsibleError("VMS API search returned {{ name }} '{}' and not '{}'".format(resource[0].{{ settings.sdk_search_param_value }}, module.params['{{ settings.sdk_search_param_value }}']))
+
+    configured_resource = dict()
+    if len(resource) == 1:
+{% if settings.require_double_lookup == True %}
+        # Get the specific resource by {{ settings.sdk_get_param }} (required to get all attributes as search is abbreviated)
+        configured_resource = resource_api.{{ settings.sdk_get_method }}({{ settings.sdk_get_param }}=getattr(resource[0],'{{ settings.sdk_get_param }}'))
+{% else %}
+        configured_resource = resource[0]
+{% endif %}
+
+    if module.params['state'] == 'absent':
+
+        # Perform idempotent deletion
+
+        if len(resource) == 0:
+            # Resource not found, so not deleted
+            result['changed'] = False
+            result['message'] = "The resource specified does not exist"
+            module.exit_json(**result)
+
+        elif not module.check_mode:
+            # Resource found and check mode is disabled, perform deletion
+            resource_api.{{ settings.sdk_delete_method }}({{ settings.primary_key }}=configured_resource.{{ settings.primary_key }})
+            result['changed'] = True
+            result['message'] = "Removed {{ name }} with {{ settings.primary_key }} {}".format(configured_resource.{{ settings.primary_key }})
+            module.exit_json(**result)
+        
+        else:
+            # Resource found but check mode is enabled, do not delete
+            result['changed'] = False
+            result['message'] = "Would delete {{ name }} with {{ settings.primary_key }} {} but check mode is enabled".format(configured_resource.{{ settings.primary_key }})
+            module.exit_json(**result)
+
+    elif module.params['state'] == 'present':
+
+        # Perform idempotent creation / configuration
+
+        if len(resource) == 0:
+            # Create a POST payload of all resource_keys and create the resource (resource does not exist)
+            payload = dict()
+            for key in resource_keys:
+                if key in module.params and key not in ignore_when_null_keys:
+                    payload[key] = module.params[key]
+                elif key in ignore_when_null_keys and module.params[key] is not None:
+                    payload[key] = module.params[key]
+
+            new_resource = resource_api.{{ settings.sdk_create_method }}(payload)
+
+            # Convert the object returned to a dictionary containing the resource_keys
+            result['resource'] = new_resource.to_dict()
+
+            result['changed'] = True
+            result['message'] = "Created {{ name }} with {{ settings.primary_key }} {}".format(new_resource.{{ settings.primary_key }})
+            module.exit_json(**result)
+
+        else:
+
+            # Resource exists, comparison required
+            changes = dict()
+            patch = dict()
+
+            # Compare resource_keys and build a PATCH payload of differences
+            for key in resource_keys:
+                desired_value = module.params[key]
+                configured_value = getattr(configured_resource, key)
+
+{% if settings.dict_convert_params | length > 0 %}
+                # Flatten parameters that are nested objects from vastsdk
+                if key in {{ settings.dict_convert_params }}:
+                    configured_value = getattr(configured_resource, key).to_dict()
+{% endif %}
+{% if settings.param_specific_compare_funcs | length > 0 %}{% for key, value in settings.param_specific_compare_funcs.items() %}
+                # Specific comparison function for {{ key }}
+                if key == '{{ key }}':
+                    if {{value}}(configured_value, desired_value):
+                        changes[key] = desired_value
+                        patch[key] = desired_value
+                    continue
+{% endfor %}{% endif %}
+
+                if isinstance(configured_value, list) and isinstance(desired_value, list):
+                    configured_value = configured_value.sort()
+                    desired_value = desired_value.sort()
+
+                if key in ignore_trailing_domain_separator and desired_value is not None:
+                    desired_value = module.params[key].rstrip('@')
+                if key in ignore_trailing_domain_separator and configured_value is not None:
+                    configured_value = getattr(configured_resource, key).rstrip('@')
+
+                if configured_value != desired_value:
+                    if key in module.params and key not in ignore_when_null_keys\
+                    or key in ignore_when_null_keys and desired_value is not None:
+                        changes[key] = { "before": configured_value, "after": desired_value }
+                        patch[key] = desired_value
+
+            result['changes'] = changes
+
+            if not module.check_mode and len(changes.keys()) > 0:
+                # Changes required and check mode is not enabled
+                updated_resource = resource_api.{{ settings.sdk_patch_method }}({{ settings.primary_key }}=configured_resource.{{ settings.primary_key }},{{ settings.sdk_patch_argument }}=patch)
+                result['changed'] = True
+                result['resource'] = updated_resource.to_dict()
+                result['message'] = "Changed {{ name }} with {{ settings.primary_key }} {}".format(configured_resource.{{ settings.primary_key }})
+
+            elif module.check_mode and len(changes.keys()) > 0:
+                # Changes required and check mode is enabled
+                result['resource'] = configured_resource.to_dict()
+                result['message'] = "Not making changes to {{ name }} with {{ settings.primary_key }} {} due to check mode".format(configured_resource.{{ settings.primary_key }})
+
+            elif len(changes.keys()) == 0:
+                # No changes required
+                result['resource'] = configured_resource.to_dict()
+                result['message'] = "No changes required to {{ name }} with {{ settings.primary_key }} {}".format(configured_resource.{{ settings.primary_key }})
+
+            module.exit_json(**result)
+{% endif %}{# Query Only #}
+    module.exit_json(**result)
+
+def main():
+    run_module()
+
+if __name__ == '__main__':
+    main()

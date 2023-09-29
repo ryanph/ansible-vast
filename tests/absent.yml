@@ -1,0 +1,49 @@
+- hosts: all
+  gather_facts: no
+  connection: local
+
+  tasks:
+
+    - name: Delete a View (view)
+      ryanph.vast.view:
+        path: /s3
+        vms_verify_ssl: false
+        state: absent
+
+    - name: Delete a View (view)
+      ryanph.vast.view:
+        path: /nfs
+        state: absent
+        vms_verify_ssl: false
+
+    - name: Delete a View (view)
+      ryanph.vast.view:
+        path: /mixed
+        state: absent
+        vms_verify_ssl: false
+
+    - name: Delete a View Policy (viewpolicy)
+      ryanph.vast.viewpolicy:
+        name: s3_policy
+        vms_verify_ssl: false
+        state: absent
+
+    - name: Delete a View Policy (viewpolicy)
+      ryanph.vast.viewpolicy:
+        name: nfs_policy
+        vms_verify_ssl: false
+        state: absent
+      register: nfs_policy
+
+    - name: Delete a View Policy (viewpolicy)
+      ryanph.vast.viewpolicy:
+        name: mixed_policy
+        vms_verify_ssl: false
+        state: absent
+      register: nfs_policy
+
+    - name: Delete a User (user)
+      ryanph.vast.user:
+        name: s3_user
+        vms_verify_ssl: false
+        state: absent

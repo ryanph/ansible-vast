@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+
+def object_to_dict(o, keys1, keys2 = []):
+    res = dict()
+    for key in (keys1 + keys2):
+        val = getattr(o, key)
+        if not type(val).__class__.__name__ == 'ModelMetaclass':  # Todo: Handle ModelMetaClasses
+            res[key] = getattr(o, key)
+    return res
+
+
+def share_acl_changes_detected(configured, desired):
+
+
+    #
+    # Deep comparison of a share_acl
+    # True returned if differences detected
+    #
+
+    #
+    # "acl": [
+    #     {
+    #         "grantee": "users",
+    #         "is_sid": true,
+    #         "perm": "FULL",
+    #         "sid_str": "S-1-5-21-248963057-614103661-3067232799-241224"
+    #     }
+    # ],
+    # "enabled": true
+    #
+
+    if desired is None:
+        return False
+
+    if "enabled" in desired.keys():
+        if "enabled" not in configured or configured["enabled"] != desired["enabled"]:
+            return True
+    
+    if "acl" in desired.keys():
+
+        if "acl" not in configured.keys():
+            return True
+
+        if len(desired['acl']) != len(configured['acl']):
+            return True
+
+        configured_acl_copy = configured['acl'].copy()
+        for desired_ace in desired['acl']:
+            for configured_ace in configured_acl_copy:
+                is_same = True
+                for key in desired_ace.keys():
+                    if key not in configured_ace or configured_ace[key] != desired_ace[key]:
+                        is_same = False
+                if is_same:
+                    configured_acl_copy.remove(configured_ace)
+                    
+        if len(configured_acl_copy) > 0:
+            return False
+
+    return False

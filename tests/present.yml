@@ -1,0 +1,120 @@
+- hosts: all
+  gather_facts: no
+  connection: local
+
+  tasks:
+
+    # Query Examples
+
+    - name: Lookup a user by name (userquery)
+      ryanph.vast.userquery:
+        name: vastdata
+        vms_verify_ssl: false
+      register: user_query_result
+    
+    - name: Log the SID returned (debug)
+      ansible.builtin.debug: var=user_query_result.resource.sid
+
+    - name: Lookup a group by name (groupquery)
+      ryanph.vast.groupquery:
+        name: AllStaffAccounts
+        vms_verify_ssl: false
+      register: group_query_result
+    
+    - name: Log the SID returned (deug)
+      ansible.builtin.debug: var=group_query_result.resource.sid
+
+    # Mixed NFS and SMB Example
+
+    - name: Create a Mixed Protocol View Policy with SMB Auditing (viewpolicy)
+      ryanph.vast.viewpolicy:
+        name: mixed_policy
+        flavor: MIXED_LAST_WINS
+        auth_source: PROVIDERS
+        nfs_read_write: ['192.168.1.1']
+        nfs_read_only: []
+        protocols: ['SMB']
+        protocols_audit:
+          read_data: True
+          log_username: True
+          log_full_path: True
+          modify_data_md: True
+          create_delete_files_dirs_objects: True
+        vms_verify_ssl: false
+        state: present
+      register: mixed_policy
+
+    - name: Create a Mixed Protocol View (view)
+      ryanph.vast.view:
+        path: /mixed
+        share: my_mixed_view
+        policy_id: "{{ mixed_policy.resource.id }}"
+        protocols: ['SMB', 'NFS']
+        vms_verify_ssl: false
+        share_acl:
+          enabled: true
+          acl:
+            - perm: FULL
+              grantee: users
+              sid_str: "{{ user_query_result.resource.sid }}"
+              is_sid: True
+            - perm: CHANGE
+              grantee: groups
+              sid_str: "{{ group_query_result.resource.sid }}"
+              is_sid: True
+        state: present
+
+    # Native S3 Example
+
+    - name: Create a Native S3 View Policy (viewpolicy)
+      ryanph.vast.viewpolicy:
+        name: s3_policy
+        flavor: S3_NATIVE
+        auth_source: PROVIDERS
+        allowed_characters: NPL
+        path_length: NPL
+        vms_verify_ssl: false
+        state: present
+      register: s3_policy
+
+    - name: Create a local User (user)
+      ryanph.vast.user:
+        name: s3_user
+        uid: 1000
+        vms_verify_ssl: false
+        state: present
+      register: s3_user
+
+    - name: Create a Native S3 View (view)
+      ryanph.vast.view:
+        path: /s3
+        bucket: my-s3-view
+        policy_id: "{{ s3_policy.resource.id }}"
+        bucket_owner: "s3_user"
+        protocols: ['S3']
+        vms_verify_ssl: false
+        state: present
+
+    # NFS Example
+
+    - name: Create a NFS View Policy (viewpolicy)
+      ryanph.vast.viewpolicy:
+        name: nfs_policy
+        flavor: NFS
+        auth_source: PROVIDERS
+        allowed_characters: LCD
+        path_length: LCD
+        nfs_read_only: []
+        nfs_read_write: ['192.168.0.0/24', '10.0.0.1']
+        vms_verify_ssl: false
+        state: present
+      register: nfs_policy
+
+    - name: Create a NFS View (view)
+      ryanph.vast.view:
+        path: /nfs
+        alias: /export/application
+        policy_id: "{{ nfs_policy.resource.id }}"
+        protocols: ['NFS']
+        vms_verify_ssl: false
+        state: present

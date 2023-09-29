@@ -1,0 +1,49 @@
+# Ansible VAST Collection
+
+A set of generated ansible modules for the VAST Management Service (VMS).
+Modules are idempotent and support check_mode with unit tests run against VMS 4.7.
+For documentation on module specific arguments refer to the documentation on your cluster located at https://VMS_IP/docs/.
+
+## Requirements
+
+Python [vastsdk](https://github.com/ryanph/vastsdk) library version 1.1.0
+
+## Installing
+
+```
+pip3 install https://github.com/ryanph/vastsdk/releases/download/v1.1.0/vastsdk-python-1.1.0.tgz
+ansible-galaxy install https://github.com/ryanph/ansible-vast/releases/download/v1.1.0/ryanph-vast-1.1.0.tar.gz
+```
+
+## Common Arguments
+
+All modules use the following common self-descriptive arguments:
+
+- *vms_hostname*: The hostname of the VMS instance
+- *vms_username*: The username to authenticate with
+- *vms_password*: The password to authenticate with
+- *vms_verify_ssl*: Whether to verify SSL certificates
+
+## Common Return Values
+
+All modules return the following values:
+
+- *resource*: The resource created or updated (view, viewpolicy etc)
+- *changes*: The changes made to the resource (if applicable)
+- *message*: The action performed by the module
+
+## Module Summary
+
+For full documentation refer to `ansible-doc` after installing the collection.
+{% for key,value in settings.modules.items() | sort %}### {{ settings.collection.name }}.{{ key }}
+
+{{ value.description }}
+
+#### Arguments
+{% for option in value.options | sort %}- *{{ option }}*
+{%endfor%}
+#### Examples
+{% for example in examples[key] %}
+```
+    {{ example | indent(4) }}```{% endfor %}
+{% endfor %}

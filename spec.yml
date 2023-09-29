@@ -1,0 +1,886 @@
+openapi: 3.1.0
+info:
+  description: 'VAST Data VAST Management Service (VMS) API - https://vastdata.com'
+  version: 1.0.0
+  title: VMS
+  contact:
+    email: "support@vastdata.com"
+    
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Token
+    description: Authentication and Token Management
+  - name: Views
+    description: View Management
+  - name: ViewPolicies
+    description: View Policy Management
+  - name: Users
+    description: User Query and Management
+  - name: Groups
+    description: Group Query and Management
+    
+externalDocs:
+  url: "https://support.vastdata.com/hc/en-us/articles/5594954910108-The-VAST-REST-API"
+
+servers:
+  - url: https://vast.local
+    
+paths:
+
+  /api/token/:
+    post:
+      tags:
+      - Token
+      operationId: createTokens
+      description: Create a token for API authentication
+      summary: Create a token for API authentication
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                username:
+                  examples:
+                    - "admin"
+                  description: "VMS Administrator Username"
+                  type: string
+                password:
+                  examples:
+                    - "123456"
+                  description: "VMS Administrator Password"
+                  type: string
+              required:
+              - username
+              - password
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Token"
+          description: Access and Refresh Tokens Created
+
+  /api/users/names/:
+    get:
+      tags:
+        - Users
+      summary: Search for an AD user by prefix and domain
+      description: Search for an AD user by prefix and domain
+      operationId: getUserNames
+      parameters:
+        - name: prefix
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: domain
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserNames"
+  
+  /api/users/:
+    post:
+      tags:
+        - Users
+      summary: Create a User
+      description: Create a User
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        "201":
+          description: "User Created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    get:
+      tags:
+        - Users
+      summary: List Users
+      description: List available Users
+      operationId: listUsers
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+        - in: query
+          name: uid
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "Users Returned"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /api/users/{id}/:
+    delete:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the User
+      tags:
+        - Users
+      summary: Delete a User
+      description: Delete User
+      operationId: deleteUserById
+      responses:
+        "201":
+          description: "User Deleted"
+          
+    patch:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      tags:
+        - Users
+      summary: Delete a User
+      description: Delete User
+      operationId: updateUserById
+      responses:
+        "200":
+          description: "User Updated"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /api/users/{id}/access_keys/:
+    delete:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the User
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                "access_key":
+                  type: string
+              required:
+                - "access_key"
+      summary: Delete an S3 Access Key for a User
+      description: Delete an S3 Access Key for a User
+      operationId: deleteUserAccessKeyById
+      responses:
+        "200":
+          description: "Access Key Deleted"
+    post:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the User
+      tags:
+        - Users
+      summary: Create an S3 Access Key for a User
+      description: Create an S3 Access Key for a User
+      operationId: createUserAccessKeyById
+      responses:
+        "200":
+          description: "Access Key Created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/S3AccessKey"
+
+  /api/users/query/:
+    get:
+      parameters:
+        - in: query
+          name: username
+          schema:
+            type: string
+          description: Username to search for
+      tags:
+        - Users
+      summary: Query a user
+      description: Query a user
+      operationId: queryUser
+      responses:
+        "200":
+          description: User query result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /api/groups/query/:
+    get:
+      parameters:
+        - in: query
+          name: groupname
+          schema:
+            type: string
+          description: Group name to search for
+      tags:
+        - Groups
+      summary: Query a group
+      description: Query a Group
+      operationId: queryGroup
+      responses:
+        "200":
+          description: Group query result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupData"
+
+  /api/views/:
+    get:
+      parameters:
+        - in: query
+          name: path
+          schema:
+            type: string
+          description: Element store path to filter by
+      tags:
+        - Views
+      summary: List Views
+      description: List Views
+      operationId: listViews
+      responses:
+        "200":
+          description: "Views Returned" 
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/View"
+    post:
+      tags:
+        - Views
+      summary: Create a View
+      description: Create a View
+      operationId: createView
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/View"
+      responses:
+        "201":
+          description: "View Created" 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/View"
+
+  /api/views/{id}/:
+    get:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the View
+      operationId: getViewById
+      tags:
+        - Views
+      summary: Get a View
+      description: Get a View
+      responses:
+        "200":
+          description: "View Details"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/View"
+    patch:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the View
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/View"
+      operationId: updateViewById
+      tags:
+        - Views
+      summary: Update a View
+      description: Update a View
+      responses:
+        "200":
+          description: "View Deleted"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/View"
+
+    delete:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the View
+      operationId: deleteViewById
+      tags:
+        - Views
+      summary: Delete a View
+      description: Delete a View
+      responses:
+        "204":
+          description: "View Deleted"
+
+  /api/viewpolicies/:
+    post:
+      tags:
+        - ViewPolicies
+      summary: Create a View Policiy
+      description: Create a View Policy
+      operationId: createViewpolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ViewPolicy"
+              required:
+                - name
+      responses:
+        "201":
+          description: "View Policy Created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViewPolicy"
+                
+    get:
+      tags:
+        - ViewPolicies
+      summary: List View Policies
+      description: List configured View Policies
+      operationId: getViewpolicies
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Name to filter for
+      responses:
+        "200":
+          description: "View Policies Returned" 
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ViewPolicy"
+
+  /api/viewpolicies/{id}/:
+    patch:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the View Policy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ViewPolicy"
+      tags:
+        - ViewPolicies
+      summary: Update a View Policy
+      description: Create View Policies
+      operationId: updateViewpolicyById
+      responses:
+        "200":
+          description: "View Policy Updated"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViewPolicy"
+    delete:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the View Policy
+      tags:
+        - ViewPolicies
+      summary: Delete a View Policy
+      description: Delete a View Policy
+      operationId: deleteViewpolicyById
+      responses:
+        "204":
+          description: "View Policy Deleted"
+
+components:
+  schemas:
+  
+    UserNames:
+      type: object
+      properties:
+        "label":
+          type: string
+        "value":
+          type: string
+        "sid_str":
+          type: string
+        "uid_or_gid":
+          type: integer
+        "is_sid":
+          type: boolean
+        "login_name":
+          type: string
+        "fqdn":
+          type: string
+
+    Token:
+      type: object
+      properties:
+        "access":
+          type: string
+        "refresh":
+          type: string
+
+    View:
+      type: object
+      properties:
+        "id":
+          type: number
+        "guid":
+          type: string
+        "name":
+          type: string
+        "url":
+          type: string
+        "title":
+          type: string
+        "alias":
+          type: string
+          description: Alias for NFS export, must start with / and only ASCII characters are allowed. If configured, this supersedes the exposed NFS export path
+        "allow_anonymous_access":
+          type: boolean
+        "allow_s3_anonymous_access":
+          type: boolean
+          description: Allow S3 anonymous access
+        "bucket":
+          type: string
+          description: S3 Bucket name
+        "bucket_creators":
+          description: For S3 endpoint buckets, this is a list of users whose bucket create requests use this view
+          type: array
+          items:
+            type: string
+        "bucket_creators_groups":
+          description: For S3 endpoint buckets, this is a list of groups whose bucket create requests use this view
+          type: array
+          items:
+            type: string
+        "bucket_owner":
+          type: string
+          description: Owner of the S3 bucket
+        "cluster":
+          type: string
+        "cluster_id":
+          type: number
+        "ignore_oos":
+          type: boolean
+        "internal":
+          type: boolean
+        "logical_capacity":
+          type: number
+        "nfs_interop_flags":
+          type: string
+          description: Indicates whether the view should support simultaneous access to NFS3/NFS4/SMB protocols
+          default: null
+          enum:
+            - BOTH_NFS3_AND_NFS4_INTEROP_DISABLED
+            - ONLY_NFS3_INTEROP_ENABLED
+            - ONLY_NFS4_INTEROP_ENABLED
+            - BOTH_NFS3_AND_NFS4_INTEROP_ENABLED
+        "path":
+          description: The Element Store path exposed by the view. Begin with a forward slash. Do not include a trailing slash
+          type: string
+        "physical_capacity":
+          type: number
+        "policy_id":
+          description: ID of the View Policy to apply
+          type: integer
+        "protocols":
+          description: Protocols the view will be accessible via
+          type: array
+          items:
+            type: string
+            enum: ['NFS', 'NFSv4.1', 'SMB', 'S3']
+        "s3_locks":
+          type: boolean
+          description: S3 Object Locking enabled on S3 bucket.
+        "s3_locks_retention_mode":
+          type: string
+          description: S3 Locks retention mode
+        "s3_locks_retention_period":
+          type: string
+          description: Default retention period for objects in the bucket. If set, object versions that are placed in the bucket are automatically protected with the specified retention lock
+        "s3_unverified_lookup":
+          type: boolean
+          description: S3 unverified lookup
+        "s3_versioning":
+          type: boolean
+          description: S3 Versioning enabled on S3 bucket
+        "share":
+          type: string
+          description: Name of the SMB share
+          default: null
+        "share_acl":
+          description: SMB Share Level ACL
+          type: object
+          properties:
+            "enabled":
+              type: boolean
+            "acl":
+              type: array
+              items: 
+                type: object
+                properties:
+                  "fqdn":
+                    type: string
+                    description: FQDN of the grantee authorization domain
+                  "name":
+                    type: string
+                    description: Name of the grantee
+                  "perm":
+                    type: string
+                    description: Permission to apply to the grantee
+                    enum: ['FULL', 'CHANGE', 'READ']
+                  "grantee":
+                    type: string
+                    description: Type of the grantee
+                    enum: ['groups', 'users']
+                  "sid_str":
+                    type: string
+                    description: SID of the grantee
+                  "uid_or_gid":
+                    type: number
+                    description: UID or GID of the grantee
+         # default: { "acl": [], "enabled": false }
+        "sync":
+          type: string
+        "sync_time":
+          type: string
+        "tenant_id":
+          type: number
+        "create_dir":
+          type: boolean
+          description: Create directory if it does not exist
+          default: true
+        "bulk_permission_update_state":
+          type: string
+          description: Bulk Permission Update state
+        "bulk_permissions_update_progress":
+          type: integer
+          description: Progress of the running Bulk Permissions Update
+          
+    ViewPolicy:
+      type: object
+      description: A reusable set of configurations for accessing a View
+      properties:
+        "id":
+          type: number
+          description: The unique ID of the View Policy
+          example: 1
+        "name":
+          type: string
+          description: The unique name of the View Policy
+        "flavor":
+          description: How file and directory permissions are applied
+          type: string
+          enum: ['NFS','SMB','S3_NATIVE','MIXED_LAST_WINS']
+          example: SMB
+        "auth_source":
+          description: Source of group memberships for authenticated users
+          type: string
+          enum: ['RPC','PROVIDERS','RPC_AND_PROVIDERS']
+          default: 'PROVIDERS'
+        "path_length":
+          description: The maximum allowed path length for files stored in the view
+          type: string
+          enum: ['NPL','LCD','YOYO']
+          default: 'LCD'
+        "allowed_characters":
+          description: The permitted character set for files stored in the view
+          type: string
+          enum: ['NPL','LCD','YOYO']
+          default: 'LCD'
+        "gid_inheritance":
+          description: How files receive their owning group when created
+          type: string
+          enum: ['LINUX','BSD']
+          default: 'LINUX'
+        "enable_snapshot_lookup":
+          description: Whether the .snapshot directory is accessible
+          type: boolean
+          default: true
+        "enable_listing_of_snapshot_dir":
+          description: Whether the .snapshot directory is visible
+          type: boolean
+          default: false
+        "use_32bit_fileid":
+          description: Support legacy 32-bit applications running over NFS
+          type: boolean
+          default: false
+        "nfs_case_insensitive":
+          description: Case insensitivity for NFS clients
+          type: boolean
+          default: false
+        "nfs_posix_acl":
+          description: Support for extended POSIX ACLs for NFSv3 clients
+          type: boolean
+          default: false
+        "nfs_read_only":
+          description: List of IP addresses or subnets that have Read Only access via NFS
+          type: array
+          items:
+            type: string
+          default: []
+        "nfs_read_write":
+          description: List of IP addresses or subnets that have Read and Write access via NFS
+          type: array
+          items:
+            type: string
+          default: ['*']
+        "smb_read_write":
+          description: List of IP addresses or subnets that have Read and Write access via SMB
+          type: array
+          items:
+            type: string
+          default: ['*']
+        "smb_read_only":
+          description: List of IP addresses or subnets that have Read Only access via SMB
+          type: array
+          items:
+            type: string
+          default: []
+        "s3_read_write":
+          description: List of IP addresses or subnets that have Read Only access via SMB
+          type: array
+          items:
+            type: string
+          default: ['*']
+        "s3_read_only":
+          description: List of IP addresses or subnets that have Read Only access via S3
+          type: array
+          items:
+            type: string
+          default: []
+        "trash_access":
+          description: List of IP addresses or subnets that should have trash access
+          type: array
+          items:
+            type: string
+        "nfs_no_squash":
+          description: List of IP addresses or subnets that should not have any remote user mapping applied
+          type: array
+          items:
+            type: string
+          default: []
+        "nfs_root_squash":
+          description: List of IP addresses or subnets that should have the remote root user mapped to 'nobody'
+          type: array
+          items:
+            type: string
+          default: ['*']
+        "nfs_all_squash":
+          description: List of IP addresses or subnets that should have the all remote users mapped to 'nobody'
+          type: array
+          items:
+            type: string
+          default: []
+        "s3_visibility":
+          description: Users with permission to list buckets that are created using this policy 
+          type: array
+          items:
+            type: string
+          default: []
+        "s3_visibility_groups":
+          description: Groups with permission to list buckets that are created using this policy 
+          type: array
+          items:
+            type: string
+          default: []
+        "smb_is_ca":
+          description: Enables SMB Continuous Availability
+          type: boolean
+          default: false
+        "smb_file_mode":
+          description: Default unix type permissions on new files created over SMB
+          type: number
+        "smb_directory_mode":
+          description: Default unix type permissions on new directories created over SMB
+          type: number
+        "use_auth_provider":
+          type: boolean
+        "nfs_return_open_permissions":
+          type: boolean
+        "vip_pools":
+          description: An array of VIP Pool Identifiers that associated views will be accessible from
+          type: array
+          items:
+            type: integer
+          default: []
+        "protocols":
+          description: Protocols to audit
+          type: array
+          items:
+            type: string
+        "protocols_audit":
+          description: Protocol audit settings
+          type: object
+          properties:
+            "log_full_path":
+              type: boolean
+            "log_username":
+              type: boolean
+            "create_delete_files_dirs_objects":
+              type: boolean
+            "modify_data_md":
+              type: boolean
+            "read_data":
+              type: boolean
+
+  
+    S3AccessKey:
+      type: object
+      properties:
+        "access_key":
+          type: string
+        "secret_key":
+          type: string
+    
+    User:
+      type: object
+      properties:
+        "id":
+          type: number
+        "uid":
+          type: integer
+          description: Numeric UID for the user
+        "sid":
+          type: string
+        "leading_group_name":
+          type: string
+        "leading_group_gid":
+          type: number
+        "primary_group_name":
+          type: string
+        "primary_group_sid":
+          type: string
+        "name":
+          type: string
+          description: The name of the user (username)
+        "login_name":
+          type: string
+        "groups":
+          type: array
+          items:
+            type: "string"
+        "group_count":
+          type: number
+        "allow_create_bucket":
+          type: boolean
+          description: Whether the user is permitted to create S3 buckets
+          default: false
+        "allow_delete_bucket":
+          type: boolean
+          description: Whether the user is permitted to delete S3 buckets
+          default: false
+        "s3_superuser":
+          type: boolean
+          description: Whether the user is an S3 Superuser and permitted to bypass ACLs
+          default: false
+        "origins":
+          type: object
+          properties:
+            "uid":
+              type: string
+            "leading_group":
+              type: string
+            "primary_group_sid":
+              type: string
+            "name":
+              type: string
+            "sid":
+              type: string
+        "access_keys":
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+  
+    GroupData:
+      type: object
+      properties:
+        "gid":
+          type: number
+          description: Group GID
+        "sid":
+          type: string
+          description: Group SID
+        "name":
+          type: string
+          description: Group Name
+        "provider_type":
+          type: string
+          description: Provider Type
+
+  securitySchemes:
+    bearerAuth:
+      scheme: bearer
+      type: http

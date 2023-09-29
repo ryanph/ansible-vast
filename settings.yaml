@@ -1,0 +1,150 @@
+---
+openapi_spec: "spec.yml"
+
+collection:
+    name: ryanph.vast
+    authors:
+        - "Ryan Parker-Hill (ryanph@hoover.rocks)"
+    dependencies: []
+
+modules:
+
+    user:
+        query_only: False
+        description: VAST Management Service (VMS) User Management
+        schema: User
+        primary_key: id
+        options:
+          - name
+          - uid
+          - allow_create_bucket
+          - allow_delete_bucket
+          - s3_superuser
+        ignore_when_null: []
+        ignore_trailing_domain_separator: []
+        sdk_module: UsersApi
+        sdk_search_method: list_users
+        sdk_search_param_value: name
+        sdk_search_param_name: name
+        sdk_delete_method: delete_user_by_id
+        sdk_create_method: create_user
+        sdk_patch_method: update_user_by_id
+        sdk_patch_argument: user
+        require_double_lookup: False
+        dict_convert_params: []
+        param_specific_compare_funcs: {}
+
+    viewpolicy:
+        query_only: False
+        description: VAST Management Service (VMS) View Policy Management
+        schema: ViewPolicy
+        primary_key: id
+        options:
+            - name
+            - flavor
+            - auth_source
+            - path_length
+            - allowed_characters
+            - use_32bit_fileid
+            - smb_is_ca
+
+            - nfs_read_only
+            - nfs_read_write
+            - nfs_root_squash
+            - nfs_no_squash
+            - nfs_all_squash
+
+            - gid_inheritance
+            - enable_snapshot_lookup
+            - enable_listing_of_snapshot_dir
+            - nfs_case_insensitive
+            - nfs_posix_acl
+            - s3_visibility
+            - s3_visibility_groups
+            - vip_pools
+
+            - protocols
+            - protocols_audit
+        ignore_when_null: []
+        ignore_trailing_domain_separator: []
+        sdk_module: ViewPoliciesApi
+        sdk_search_method: get_viewpolicies
+        sdk_search_param_value: name
+        sdk_search_param_name: name
+        sdk_delete_method: delete_viewpolicy_by_id
+        sdk_create_method: create_viewpolicy
+        sdk_patch_method: update_viewpolicy_by_id
+        sdk_patch_argument: view_policy
+        require_double_lookup: False
+        dict_convert_params: ['protocols_audit']
+        param_specific_compare_funcs: {}
+
+    view:
+        query_only: False
+        description: VAST Management Service (VMS) View Management
+        schema: View
+        primary_key: id
+        options:
+            - alias
+            - allow_s3_anonymous_access
+            - bucket
+            - bucket_owner
+            - nfs_interop_flags
+            - path
+            - policy_id
+            - protocols
+            - s3_locks
+            - s3_locks_retention_mode
+            - s3_versioning
+            - share
+            - share_acl
+            - create_dir
+        ignore_when_null:
+            - s3_locks
+            - s3_locks_retention_mode
+            - s3_versioning
+            - allow_s3_anonymous_access
+            - alias
+            - share
+            - nfs_interop_flags
+            - share_acl
+            - bucket
+        ignore_trailing_domain_separator: ['bucket_owner']
+        sdk_module: ViewsApi
+        sdk_search_method: list_views
+        sdk_search_param_value: path
+        sdk_search_param_name: path
+        sdk_delete_method: delete_view_by_id
+        sdk_create_method: create_view
+        sdk_patch_method: update_view_by_id
+        sdk_patch_argument: view
+        require_double_lookup: True
+        sdk_get_method: get_view_by_id
+        sdk_get_param: id
+        dict_convert_params: ['share_acl']
+        param_specific_compare_funcs:
+            share_acl: share_acl_changes_detected
+
+    userquery:
+        query_only: True
+        description: VAST Management Service (VMS) User Query
+        schema: User
+        options:
+            - name
+        ignore_trailing_domain_separator: []
+        sdk_module: UsersApi
+        sdk_search_method: query_user
+        sdk_search_param_value: name
+        sdk_search_param_name: username
+
+    groupquery:
+        query_only: True
+        description: VAST Management Service (VMS) Group Query
+        schema: GroupData
+        options:
+            - name
+        ignore_trailing_domain_separator: []
+        sdk_module: GroupsApi
+        sdk_search_method: query_group
+        sdk_search_param_value: name
+        sdk_search_param_name: groupname
