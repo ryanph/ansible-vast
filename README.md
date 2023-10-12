@@ -12,7 +12,7 @@ Python [vastsdk](https://github.com/ryanph/vastsdk) library version 1.1.0
 
 ```
 pip3 install https://github.com/ryanph/vastsdk/releases/download/v1.1.0/vastsdk-python-1.1.0.tgz
-ansible-galaxy install https://github.com/ryanph/ansible-vast/releases/download/v1.1.0/ryanph-vast-1.1.0.tar.gz
+ansible-galaxy install https://github.com/ryanph/ansible-vast/releases/download/v1.1.1/ryanph-vast-1.1.1.tar.gz
 ```
 
 ## Common Arguments
