@@ -1,6 +1,1 @@
-Initial version including:
-* Group Query
-* User Query
-* Users
-* Views
-* View Policies
+Fixed issue with constant changes when protocol auditing is not specified
