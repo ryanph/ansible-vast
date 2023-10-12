@@ -65,7 +65,9 @@ modules:
 
             - protocols
             - protocols_audit
-        ignore_when_null: []
+        ignore_when_null:
+            - protocols
+            - protocols_audit
         ignore_trailing_domain_separator: []
         sdk_module: ViewPoliciesApi
         sdk_search_method: get_viewpolicies
