@@ -50,6 +50,36 @@ VAST Management Service (VMS) Group Query
     ryanph.vast.groupquery:
       name: AllStaffAccounts
 ```
+### ryanph.vast.quota
+
+VAST Management Service (VMS) Quota Management
+
+#### Arguments
+- *create_dir*
+- *hard_limit*
+- *hard_limit_inodes*
+- *name*
+- *path*
+- *soft_limit*
+- *soft_limit_inodes*
+
+#### Examples
+
+```
+    name: Create a quota (quota)
+    ryanph.vast.quota:
+      create_dir: false
+      hard_limit: '10000'
+      name: my_quota
+      path: /mixed
+      state: present
+```
+```
+    name: Delete a quota (quota)
+    ryanph.vast.quota:
+      name: my_quota
+      state: absent
+```
 ### ryanph.vast.user
 
 VAST Management Service (VMS) User Management

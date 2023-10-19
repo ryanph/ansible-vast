@@ -6,6 +6,15 @@
 
     # Query Examples
 
+    - name: Create a quota (quota)
+      ryanph.vast.quota:
+        name: my_quota
+        path: /my_path
+        create_dir: True
+        state: present
+        hard_limit: "10000"
+        vms_verify_ssl: false
+
     - name: Lookup a user by name (userquery)
       ryanph.vast.userquery:
         name: vastdata

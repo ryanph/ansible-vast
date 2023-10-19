@@ -4,6 +4,12 @@
 
   tasks:
 
+    - name: Delete a quota (quota)
+      ryanph.vast.quota:
+        name: my_quota
+        state: absent
+        vms_verify_ssl: false
+
     - name: Delete a View (view)
       ryanph.vast.view:
         path: /s3

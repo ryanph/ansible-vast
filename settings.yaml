@@ -9,6 +9,33 @@ collection:
 
 modules:
 
+    quota:
+        query_only: False
+        description: VAST Management Service (VMS) Quota Management
+        schema: Quota
+        primary_key: id
+        options:
+          - name
+          - path
+          - soft_limit
+          - hard_limit
+          - soft_limit_inodes
+          - hard_limit_inodes
+          - create_dir
+        ignore_trailing_domain_separator: []
+        sdk_module: QuotasApi
+        sdk_search_method: list_quotas
+        sdk_search_param_value: name
+        sdk_search_param_name: name
+        sdk_delete_method: delete_quota_by_id
+        sdk_create_method: create_quota
+        sdk_patch_method: update_quota_by_id
+        sdk_patch_argument: quota
+        require_double_lookup: False
+        dict_convert_params: []
+        param_specific_compare_funcs: {}
+        no_compare_args: ['create_dir']
+
     user:
         query_only: False
         description: VAST Management Service (VMS) User Management
@@ -33,6 +60,7 @@ modules:
         require_double_lookup: False
         dict_convert_params: []
         param_specific_compare_funcs: {}
+        no_compare_args: []
 
     viewpolicy:
         query_only: False
@@ -80,6 +108,7 @@ modules:
         require_double_lookup: False
         dict_convert_params: ['protocols_audit']
         param_specific_compare_funcs: {}
+        no_compare_args: []
 
     view:
         query_only: False
@@ -126,6 +155,7 @@ modules:
         dict_convert_params: ['share_acl']
         param_specific_compare_funcs:
             share_acl: share_acl_changes_detected
+        no_compare_args: []
 
     userquery:
         query_only: True
@@ -138,6 +168,7 @@ modules:
         sdk_search_method: query_user
         sdk_search_param_value: name
         sdk_search_param_name: username
+        no_compare_args: []
 
     groupquery:
         query_only: True
@@ -150,3 +181,4 @@ modules:
         sdk_search_method: query_group
         sdk_search_param_value: name
         sdk_search_param_name: groupname
+        no_compare_args: []

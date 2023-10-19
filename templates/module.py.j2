@@ -161,6 +161,8 @@ def run_module():
 
             # Compare resource_keys and build a PATCH payload of differences
             for key in resource_keys:
+                if key in {{ settings.no_compare_args }}:
+                    continue
                 desired_value = module.params[key]
                 configured_value = getattr(configured_resource, key)
 
