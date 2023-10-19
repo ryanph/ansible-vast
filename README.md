@@ -6,13 +6,13 @@ For documentation on module specific arguments refer to the documentation on you
 
 ## Requirements
 
-Python [vastsdk](https://github.com/ryanph/vastsdk) library version 1.1.0
+Python [vastsdk](https://github.com/ryanph/vastsdk) library version 1.2.0
 
 ## Installing
 
 ```
-pip3 install https://github.com/ryanph/vastsdk/releases/download/v1.1.0/vastsdk-python-1.1.0.tgz
-ansible-galaxy collection install https://github.com/ryanph/ansible-vast/releases/download/v1.1.1/ryanph-vast-1.1.1.tar.gz
+pip3 install https://github.com/ryanph/vastsdk/releases/download/v1.2.0/vastsdk-python-1.2.0.tgz
+ansible-galaxy collection install https://github.com/ryanph/ansible-vast/releases/download/v1.2.0/ryanph-vast-1.2.0.tar.gz
 ```
 
 ## Common Arguments
