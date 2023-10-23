@@ -8,6 +8,7 @@ info:
     
 security:
   - bearerAuth: []
+  - basicAuth: []
 
 tags:
   - name: Token
@@ -24,6 +25,8 @@ tags:
     description: Quota Management
   - name: Protection
     description: Protection Policies and Protected Paths
+  - name: Network
+    description: Network Configuration
     
 externalDocs:
   url: "https://support.vastdata.com/hc/en-us/articles/5594954910108-The-VAST-REST-API"
@@ -267,7 +270,7 @@ paths:
       operationId: listProtectedpaths
       parameters:
         - in: query
-          name: path
+          name: source_dir
           schema:
             type: string
           description: The path of the Protected Path to search for
@@ -790,6 +793,34 @@ paths:
         "204":
           description: "View Policy Deleted"
 
+  /api/vippools/:
+    get:
+      tags:
+        - Network
+      summary: List VIP Pools
+      description: List VIP Pools
+      operationId: listVippools
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: The name of the VIP Pool to search for
+        - in: query
+          name: role
+          schema:
+            type: string
+          description: Only list VIP Pools with this role
+      responses:
+        "200":
+          description: Available VIP Pools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VIPPool"
+
 components:
   schemas:
   
@@ -939,7 +970,6 @@ components:
                   "uid_or_gid":
                     type: number
                     description: UID or GID of the grantee
-         # default: { "acl": [], "enabled": false }
         "sync":
           type: string
         "sync_time":
@@ -1305,7 +1335,23 @@ components:
           type: string
           description: The state of the Protected Path
 
+    VIPPool:
+      type: object
+      properties:
+        "id":
+          type: integer
+          description: The ID of the VIP Pool
+        "name":
+          type: string
+          description: The Name of the VIP Pool
+        "role":
+          type: string
+          description: The role assigned to the VIP Pool
+
   securitySchemes:
     bearerAuth:
       scheme: bearer
+      type: http
+    basicAuth:
+      scheme: basic
       type: http

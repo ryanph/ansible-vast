@@ -90,7 +90,12 @@ def run_module():
     resource = resource_api.{{ settings.sdk_search_method }}({{ settings.sdk_search_param_name }}=module.params['{{ settings.sdk_search_param_value }}'])
 
 {% if settings.query_only == True %}
-    result['resource'] = resource.to_dict()
+    if isinstance(resource, list):
+        result['resource'] = list()
+        for res in resource:
+            result['resource'].append(res.to_dict())
+    else:
+        result['resource'] = resource.to_dict()
 {% else %}
 
     # Search result sanity checking

@@ -6,13 +6,13 @@ For documentation on module specific arguments refer to the documentation on you
 
 ## Requirements
 
-Python [vastsdk](https://github.com/ryanph/vastsdk) library version 1.3.0
+Python [vastsdk](https://github.com/ryanph/vastsdk) library version 1.3.1
 
 ## Installing
 
 ```
-pip3 install https://github.com/ryanph/vastsdk/releases/download/v1.3.0/vastsdk-python-1.3.0.tgz
-ansible-galaxy collection install https://github.com/ryanph/ansible-vast/releases/download/v1.3.0/ryanph-vast-1.3.0.tar.gz
+pip3 install https://github.com/ryanph/vastsdk/releases/download/v1.3.1/vastsdk-python-1.3.1.tgz
+ansible-galaxy collection install https://github.com/ryanph/ansible-vast/releases/download/v1.3.1/ryanph-vast-1.3.1.tar.gz
 ```
 
 ## Common Arguments
@@ -345,4 +345,19 @@ VAST Management Service (VMS) View Policy Management
     ryanph.vast.viewpolicy:
       name: mixed_policy
       state: absent
+```
+### ryanph.vast.vippoolsquery
+
+VAST Management Service (VMS) VIP Pools Query
+
+#### Arguments
+- *name*
+
+#### Examples
+
+```
+    name: Look up a VIP Pool (vippoolsquery)
+    register: vippools_query_result
+    ryanph.vast.vippoolsquery:
+      name: campus
 ```

@@ -89,7 +89,7 @@ if __name__ == "__main__":
     log.info("Generating README.md from template")
     template = environment.get_template("readme.md.j2")
     with open("build/ryanph/vast/README.md", "w") as f:
-        f.write(template.render({"settings":settings,"examples":examples}))
+        f.write(template.render({"settings":settings,"examples":examples,"packageinfo":packageinfo}))
 
     # Generate module_utils.py
     log.info("Generating vast_utils.py")

@@ -38,7 +38,6 @@ modules:
             frames: protection_policy_frames_changes_detected
         no_compare_args: []
 
-
     protectedpath:
         query_only: False
         description: VAST Management Service (VMS) Protected Path Management
@@ -237,4 +236,17 @@ modules:
         sdk_search_method: query_group
         sdk_search_param_value: name
         sdk_search_param_name: groupname
+        no_compare_args: []
+
+    vippoolsquery:
+        query_only: True
+        description: VAST Management Service (VMS) VIP Pools Query
+        schema: VIPPool
+        options:
+            - name
+        ignore_trailing_domain_separator: []
+        sdk_module: NetworkApi
+        sdk_search_method: list_vippools
+        sdk_search_param_value: name
+        sdk_search_param_name: name
         no_compare_args: []

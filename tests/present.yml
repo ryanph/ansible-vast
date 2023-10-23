@@ -59,8 +59,17 @@
         vms_verify_ssl: false
       register: group_query_result
     
-    - name: Log the SID returned (deug)
+    - name: Log the SID returned (debug)
       ansible.builtin.debug: var=group_query_result.resource.sid
+
+    - name: Look up a VIP Pool
+      ryanph.vast.vippoolsquery:
+        name: campus
+        vms_verify_ssl: false
+      register: vippools_query_result
+    
+    - name: Log the VIP Pools returned (debug)
+      ansible.builtin.debug: var=vippools_query_result
 
     # Mixed NFS and SMB Example
 

@@ -71,6 +71,17 @@
               is_sid: True
         state: present
 
+    # VIP Pools Query
+
+    - name: Look up a VIP Pool (vippoolsquery)
+      ryanph.vast.vippoolsquery:
+        name: campus
+        vms_verify_ssl: false
+      register: vippools_query_result
+    
+    - name: Log the VIP Pools returned (debug)
+      ansible.builtin.debug: var=vippools_query_result
+
     # Native S3 Example
 
     - name: Create a Native S3 View Policy (viewpolicy)
