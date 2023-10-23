@@ -4,6 +4,30 @@
 
   tasks:
 
+    - name: Delete a Protected Path and wait for the background job to finish (protectedpath)
+      ryanph.vast.protectedpath:
+        source_dir: /my_path
+        state: absent
+        vms_verify_ssl: false
+      register:
+        protectedpath
+      until:
+        protectedpath.resource is not defined
+      retries: 10
+      delay: 10
+
+    - name: Delete a Protection Policy and wait for the background job to finish (protectionpolicy)
+      ryanph.vast.protectionpolicy:
+        name: example_policy
+        state: absent
+        vms_verify_ssl: false
+      register:
+        protectedpath
+      until:
+        protectedpath.resource is not defined
+      retries: 10
+      delay: 10
+
     - name: Delete a quota (quota)
       ryanph.vast.quota:
         name: my_quota

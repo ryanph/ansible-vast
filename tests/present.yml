@@ -4,7 +4,7 @@
 
   tasks:
 
-    # Query Examples
+    # Quota Example
 
     - name: Create a quota (quota)
       ryanph.vast.quota:
@@ -14,6 +14,35 @@
         state: present
         hard_limit: "10000"
         vms_verify_ssl: false
+
+    # Protection Examples
+
+    - name: Create a Protection Policy (protectionpolicy)
+      ryanph.vast.protectionpolicy:
+        name: example_policy
+        prefix: example
+        clone_type: LOCAL
+        indestructible: false
+        frames:
+          - every: 1D
+            start-at: "2020-01-01 18:00:00"
+            keep-local: 2D
+          - every: 1W
+            start-at: "2020-01-01 18:00:00"
+            keep-local: 1M
+        state: present
+        vms_verify_ssl: false
+      register: protectionpolicy
+
+    - name: Create a Protected Path (protectedpath)
+      ryanph.vast.protectedpath:
+        name: example_protectedpath
+        source_dir: /my_path
+        protection_policy_id: "{{ protectionpolicy.resource.id }}"
+        vms_verify_ssl: false
+        state: present
+
+    # Query Examples
 
     - name: Lookup a user by name (userquery)
       ryanph.vast.userquery:

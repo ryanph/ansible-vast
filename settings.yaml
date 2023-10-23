@@ -9,6 +9,62 @@ collection:
 
 modules:
 
+    protectionpolicy:
+        query_only: False
+        description: VAST Management Service (VMS) Protection Policy Management
+        schema: ProtectionPolicy
+        primary_key: id
+        options:
+          - name
+          - prefix
+          - clone_type
+          - indestructible
+          - frames
+        ignore_trailing_domain_separator: []
+        sdk_module: ProtectionApi
+        sdk_search_method: list_protectionpolicies
+        sdk_search_param_value: name
+        sdk_search_param_name: name
+        sdk_delete_method: delete_protectionpolicy_by_id
+        sdk_create_method: create_protectionpolicy
+        sdk_patch_method: update_protectionpolicy_by_id
+        sdk_patch_argument: protection_policy
+        require_double_lookup: False
+        return_resource_on_delete: True
+        sdk_get_method: get_protectionpolicy_by_id
+        sdk_get_param: id
+        dict_convert_params: []
+        param_specific_compare_funcs:
+            frames: protection_policy_frames_changes_detected
+        no_compare_args: []
+
+
+    protectedpath:
+        query_only: False
+        description: VAST Management Service (VMS) Protected Path Management
+        schema: ProtectedPath
+        primary_key: id
+        options:
+          - name
+          - source_dir
+          - protection_policy_id
+        ignore_trailing_domain_separator: []
+        sdk_module: ProtectionApi
+        sdk_search_method: list_protectedpaths
+        sdk_search_param_value: source_dir
+        sdk_search_param_name: source_dir
+        sdk_delete_method: delete_protectedpath_by_id
+        sdk_create_method: create_protectedpath
+        sdk_patch_method: update_protectedpath_by_id
+        sdk_patch_argument: protectedpath
+        require_double_lookup: False
+        return_resource_on_delete: True
+        sdk_get_method: get_protectedpath_by_id
+        sdk_get_param: id
+        dict_convert_params: []
+        param_specific_compare_funcs: {}
+        no_compare_args: []
+        
     quota:
         query_only: False
         description: VAST Management Service (VMS) Quota Management

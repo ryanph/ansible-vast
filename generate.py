@@ -134,6 +134,12 @@ if __name__ == "__main__":
                 "type": "bool",
                 "required": False,
                 "default": True
+            },
+            "vms_auth_type": {
+                "description": "The authentication type to use, bearer or basic",
+                "type": "str",
+                "required": False,
+                "default": "'basic'"
             }
         }
         required_if_options = list()

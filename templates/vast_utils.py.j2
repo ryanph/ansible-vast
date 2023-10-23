@@ -8,6 +8,33 @@ def object_to_dict(o, keys1, keys2 = []):
             res[key] = getattr(o, key)
     return res
 
+def protection_policy_frames_changes_detected(configured, desired):
+
+    #
+    # Deep comparison of a frame (object inside protection policies)
+    #
+
+    d_frames = desired.copy()
+    c_frames = configured.copy()
+    d_iter = desired.copy()
+    c_iter = configured.copy()
+    for d_frame in d_iter:
+        for c_frame in c_iter:
+            diff = False
+            for key in d_frame.keys():
+                if getattr(c_frame, key.replace('-','_')) != d_frame[key]:
+                    diff = True
+            if diff == False:
+                try:
+                    c_frames.remove(c_frame)
+                    d_frames.remove(d_frame)
+                except ValueError:
+                    pass
+
+    if len(c_frames) or len(d_frames):
+        return True
+    return False
+
 
 def share_acl_changes_detected(configured, desired):
 

@@ -39,6 +39,7 @@ import sys
 from vastsdk import ApiClient, Configuration
 from vastsdk.api import TokenApi
 from vastsdk.api import {{ settings.sdk_module }}
+from vastsdk.exceptions import NotFoundException
 from ansible.errors import AnsibleError
 from ansible.module_utils.basic import AnsibleModule
 {% if settings.param_specific_compare_funcs | length > 0 %}
@@ -73,12 +74,16 @@ def run_module():
     vms_api_config = Configuration(host="https://"+module.params['vms_hostname'])
     vms_api_config.verify_ssl = module.params['vms_verify_ssl']
     vms_api_client = ApiClient(vms_api_config)
-    token_api_client = TokenApi(vms_api_client)
-    vms_tokens = token_api_client.create_tokens({
-        "username": module.params['vms_username'],
-        "password": module.params['vms_password']
-    })
-    vms_api_config.access_token = str(vms_tokens.access)
+    if module.params['vms_auth_type'] == 'bearer':
+        token_api_client = TokenApi(vms_api_client)
+        vms_tokens = token_api_client.create_tokens({
+            "username": module.params['vms_username'],
+            "password": module.params['vms_password']
+        })
+        vms_api_config.access_token = str(vms_tokens.access)
+    else:
+        vms_api_config.username = module.params['vms_username']
+        vms_api_config.password = module.params['vms_password']
 
     # Search for {{ settings.schema }} specified by the module params
     resource_api = {{ settings.sdk_module }}(ApiClient(vms_api_config))
@@ -102,7 +107,7 @@ def run_module():
     configured_resource = dict()
     if len(resource) == 1:
 {% if settings.require_double_lookup == True %}
-        # Get the specific resource by {{ settings.sdk_get_param }} (required to get all attributes as search is abbreviated)
+        # Get the specific resource by {{ settings.sdk_get_param }} (required to get all attributes as search / list results are abbreviated)
         configured_resource = resource_api.{{ settings.sdk_get_method }}({{ settings.sdk_get_param }}=getattr(resource[0],'{{ settings.sdk_get_param }}'))
 {% else %}
         configured_resource = resource[0]
@@ -123,12 +128,28 @@ def run_module():
             resource_api.{{ settings.sdk_delete_method }}({{ settings.primary_key }}=configured_resource.{{ settings.primary_key }})
             result['changed'] = True
             result['message'] = "Removed {{ name }} with {{ settings.primary_key }} {}".format(configured_resource.{{ settings.primary_key }})
+
+{% if settings.return_resource_on_delete %}
+            # Lookup the resource again (for resources that go into a pending delete state to support until loops)
+            try:
+                configured_resource = resource_api.{{ settings.sdk_get_method }}({{ settings.sdk_get_param }}=getattr(resource[0],'{{ settings.sdk_get_param }}')).to_dict()
+{% if settings.dict_convert_params | length > 0 %}
+                # Flatten parameters that are nested objects from vastsdk
+                if key in {{ settings.dict_convert_params }}:
+                    configured_resource[key] = getattr(configured_resource, key).to_dict()
+{% endif %}
+                result['resource'] = configured_resource
+            except NotFoundException:
+                pass
+{% endif %}
+
             module.exit_json(**result)
         
         else:
             # Resource found but check mode is enabled, do not delete
             result['changed'] = False
             result['message'] = "Would delete {{ name }} with {{ settings.primary_key }} {} but check mode is enabled".format(configured_resource.{{ settings.primary_key }})
+            result['resource'] = configured_resource
             module.exit_json(**result)
 
     elif module.params['state'] == 'present':
@@ -179,7 +200,6 @@ def run_module():
                         patch[key] = desired_value
                     continue
 {% endfor %}{% endif %}
-
                 if isinstance(configured_value, list) and isinstance(desired_value, list):
                     configured_value = configured_value.sort()
                     desired_value = desired_value.sort()

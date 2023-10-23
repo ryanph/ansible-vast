@@ -6,13 +6,13 @@ For documentation on module specific arguments refer to the documentation on you
 
 ## Requirements
 
-Python [vastsdk](https://github.com/ryanph/vastsdk) library version 1.2.0
+Python [vastsdk](https://github.com/ryanph/vastsdk) library version 1.3.0
 
 ## Installing
 
 ```
-pip3 install https://github.com/ryanph/vastsdk/releases/download/v1.2.0/vastsdk-python-1.2.0.tgz
-ansible-galaxy collection install https://github.com/ryanph/ansible-vast/releases/download/v1.2.0/ryanph-vast-1.2.0.tar.gz
+pip3 install https://github.com/ryanph/vastsdk/releases/download/v1.3.0/vastsdk-python-1.3.0.tgz
+ansible-galaxy collection install https://github.com/ryanph/ansible-vast/releases/download/v1.3.0/ryanph-vast-1.3.0.tar.gz
 ```
 
 ## Common Arguments
@@ -23,6 +23,7 @@ All modules use the following common self-descriptive arguments:
 - *vms_username*: The username to authenticate with
 - *vms_password*: The password to authenticate with
 - *vms_verify_ssl*: Whether to verify SSL certificates
+- *vms_auth_type*: Whether to use basic or token auth
 
 ## Common Return Values
 
@@ -49,6 +50,75 @@ VAST Management Service (VMS) Group Query
     register: group_query_result
     ryanph.vast.groupquery:
       name: AllStaffAccounts
+```
+### ryanph.vast.protectedpath
+
+VAST Management Service (VMS) Protected Path Management
+
+#### Arguments
+- *name*
+- *protection_policy_id*
+- *source_dir*
+
+#### Examples
+
+```
+    name: Create a Protected Path (protectedpath)
+    ryanph.vast.protectedpath:
+      name: example_protectedpath
+      protection_policy_id: '{{ protectionpolicy.resource.id }}'
+      source_dir: /my_path
+      state: present
+```
+```
+    delay: 10
+    name: Delete a Protected Path and wait for the background job to finish (protectedpath)
+    register: protectedpath
+    retries: 10
+    ryanph.vast.protectedpath:
+      source_dir: /my_path
+      state: absent
+    until: protectedpath.resource is not defined
+```
+### ryanph.vast.protectionpolicy
+
+VAST Management Service (VMS) Protection Policy Management
+
+#### Arguments
+- *clone_type*
+- *frames*
+- *indestructible*
+- *name*
+- *prefix*
+
+#### Examples
+
+```
+    name: Create a Protection Policy (protectionpolicy)
+    register: protectionpolicy
+    ryanph.vast.protectionpolicy:
+      clone_type: LOCAL
+      frames:
+      - every: 1D
+        keep-local: 2D
+        start-at: '2020-01-01 18:00:00'
+      - every: 1W
+        keep-local: 1M
+        start-at: '2020-01-01 18:00:00'
+      indestructible: false
+      name: example_policy
+      prefix: example
+      state: present
+```
+```
+    delay: 10
+    name: Delete a Protection Policy and wait for the background job to finish (protectionpolicy)
+    register: protectedpath
+    retries: 10
+    ryanph.vast.protectionpolicy:
+      name: example_policy
+      state: absent
+    until: protectedpath.resource is not defined
 ```
 ### ryanph.vast.quota
 

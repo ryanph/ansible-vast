@@ -22,6 +22,8 @@ tags:
     description: Group Query and Management
   - name: Quotas
     description: Quota Management
+  - name: Protection
+    description: Protection Policies and Protected Paths
     
 externalDocs:
   url: "https://support.vastdata.com/hc/en-us/articles/5594954910108-The-VAST-REST-API"
@@ -65,6 +67,219 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
           description: Access and Refresh Tokens Created
+
+  /api/protectionpolicies/:
+    post:
+      tags:
+        - Protection
+      summary: Create a Protection Policy
+      description: Create a Protection Policy
+      operationId: createProtectionpolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProtectionPolicy"
+      responses:
+        "201":
+          description: Protection Policy Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProtectionPolicy"
+
+    get:
+      tags:
+        - Protection
+      summary: List Protection Policies
+      description: List Protection Policies
+      operationId: listProtectionpolicies
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: The name of the Protection Policy to search for
+      responses:
+        "200":
+          description: List of Protection Policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProtectionPolicy"
+
+  /api/protectionpolicies/{id}/:
+    get:
+      tags:
+        - Protection
+      summary: Get a specific Protection Policy
+      description: Get a specific Protection Policy
+      operationId: getProtectionpolicyById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the Protection Policy to get
+      responses:
+        "200":
+          description: Protection Policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProtectionPolicy"
+
+    patch:
+      tags:
+        - Protection
+      summary: Update a Protection Policy
+      description: Update a Protection Policy
+      operationId: updateProtectionpolicyById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the Protection Policy to update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProtectionPolicy"
+      responses:
+        "200":
+          description: Protection Policy Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProtectionPolicy"
+
+    delete:
+      tags:
+        - Protection
+      summary: Delete a Protection Policy
+      description: Delete a Protection Policy
+      operationId: deleteProtectionpolicyById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the Protection Policy to delete
+      responses:
+        "200":
+          description: Protection Policy Deleted
+
+  /api/protectedpaths/{id}/:
+
+    get:
+      tags:
+        - Protection
+      description: Get a specific Protected Path
+      summary: Get a specific Protected Path
+      operationId: getProtectedpathById
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Protected Path information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProtectedPath"
+
+
+    patch:
+      tags:
+        - Protection
+      description: Update a Protected Path
+      summary: Update a Protected Path
+      operationId: updateProtectedpathById
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProtectedPath"
+      responses:
+        "200":
+          description: Protected Path Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProtectedPath"
+
+    delete:
+      tags:
+        - Protection
+      description: Delete a Protected Path
+      summary: Delete a Protected Path
+      operationId: deleteProtectedpathById
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Protected Path Deleted
+
+
+  /api/protectedpaths/:
+    post:
+      tags:
+        - Protection
+      summary: Create a Protected Path
+      description: Create a Protected Path
+      operationId: createProtectedpath
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProtectedPath"
+      responses:
+        "201":
+          description: Protected Path Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProtectedPath"
+    get:
+      tags:
+        - Protection
+      summary: List Protected Paths
+      description: List Protected Paths
+      operationId: listProtectedpaths
+      parameters:
+        - in: query
+          name: path
+          schema:
+            type: string
+          description: The path of the Protected Path to search for
+      responses:
+        "200":
+          description: List of Protected Paths
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProtectedPath"
 
   /api/quotas:
     post:
@@ -1028,6 +1243,67 @@ components:
           description: Whether to create the path if it does not already exist
           default: False
 
+    ProtectionPolicy:
+      type: object
+      properties:
+        "id":
+          type: integer
+          description: The unique ID of the Protection Policy
+        "name":
+          type: string
+          description: The name of the protection policy
+        "prefix":
+          type: string
+          description: The prefix to apply to snapshots taken by this policy
+        "clone_type": 
+          type: string
+          description: CLOUD_REPLICATION is S3 backup. LOCAL means local snapshots without replication.
+          enum:
+            - LOCAL
+            - NATIVE_REPLICATION
+            - CLOUD_REPLICATION
+        "indestructible":
+          type: boolean
+          description: Whether created snapshots should be indestructible
+          default: False
+        "frames":
+          type: array
+          description: The schedule for snapshot creation, and the local and remote retention policies.
+          items:
+            type: object
+            properties:
+              "every":
+                type: string
+                example: "1W"
+              "start-at":
+                type: string
+                description: When the policy should take effect (YYYY-MM-DD HH:MM:SS)
+                example: "2023-10-20 02:00:00"
+              "keep-local":
+                type: string
+                example: "1M"
+              "keep-remote":
+                type: string
+                example: null
+
+    ProtectedPath:
+      type: object
+      properties:
+        "id":
+          type: integer
+          description: The unique ID of the Protected Path
+        "name":
+          type: string
+          description: The name for the Protected Path
+        "source_dir":
+          type: string
+          description: The Protected Path
+        "protection_policy_id":
+          type: integer
+          description: The ID of the Protection Policy to apply to the Protected Path
+        "protected_path_state":
+          type: string
+          description: The state of the Protected Path
 
   securitySchemes:
     bearerAuth:
