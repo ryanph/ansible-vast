@@ -27,6 +27,10 @@ tags:
     description: Protection Policies and Protected Paths
   - name: Network
     description: Network Configuration
+  - name: Tasks
+    description: Task Information
+  - name: Cluster
+    description: Cluster Information and Configuration
     
 externalDocs:
   url: "https://support.vastdata.com/hc/en-us/articles/5594954910108-The-VAST-REST-API"
@@ -706,6 +710,36 @@ paths:
         "204":
           description: "View Deleted"
 
+  /api/views/{id}/permissions_repair/:
+    post:
+      tags:
+        - Views
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the View
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkPermissionRepairRequest"
+      summary: Start a bulk permission repair
+      description: Start a bulk permission repair
+      operationId: startBulkPermissionRepair
+      responses:
+        "200":
+          description: "Permission Repair Started"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  async_task:
+                    $ref: "#/components/schemas/AsyncTask"
+
   /api/viewpolicies/:
     post:
       tags:
@@ -793,6 +827,28 @@ paths:
         "204":
           description: "View Policy Deleted"
 
+  /api/vtasks/{id}/:
+    get:
+      tags:
+        - Tasks
+      summary: Get Task Information
+      description: Get Task Information
+      operationId: getVtaskById
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the task
+      responses:
+        "200":
+          description: "Task Information"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncTask"
+
   /api/vippools/:
     get:
       tags:
@@ -821,9 +877,107 @@ paths:
                 items:
                   $ref: "#/components/schemas/VIPPool"
 
+  /api/clusters/:
+    get:
+      tags:
+        - Cluster
+      summary: List Clusters
+      description: List Clusters
+      operationId: listClusters
+      responses:
+        "200":
+          description: Clusters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cluster"
+  
+  /api/clusters/{id}/:
+    patch:
+      tags:
+        - Cluster
+      summary: Update a Cluster by id
+      description: Update a Cluster by ID
+      operationId: UpdateClusterById
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: The ID of the cluster to update
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Cluster"
+      responses:
+        "200":
+          description: Cluster Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cluster"
+
+
 components:
   schemas:
   
+    AsyncTask:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The ID of the task
+        name:
+          type: string
+          description: The Name of the task
+        guid:
+          type: string
+          description: The GUID of the task
+        state:
+          type: string
+          description: The state of the task
+        messages:
+          type: array
+          description: The task output
+          items:
+            type: string
+        execution_time:
+          type: integer
+          description: The execution time of the task in seconds
+        end_time:
+          description: The end time of the task
+          type:
+            - string
+            - null
+        failure_reason:
+          type: string
+          description: The reason why the task failed (if applicable)
+
+    BulkPermissionRepairRequest:
+      type: object
+      properties:
+        target_path:
+          type: string
+          description: The path to repair permissions on relative to the View
+        template_dir_path:
+          type: string
+          description: The path to the directory template relative to the Template View
+        template_file_path:
+          type: string
+          description: The path to the file template relative to the Template View
+        template_view_id:
+          type: integer
+          description: The ID of the View containing the template directory and file
+      required:
+        - target_path
+        - template_dir_path
+        - template_file_path
+        - template_view_id
+
     UserNames:
       type: object
       properties:
@@ -1347,6 +1501,75 @@ components:
         "role":
           type: string
           description: The role assigned to the VIP Pool
+
+    Cluster:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The ID of the VAST Cluster
+        name:
+          type: string
+          description: The name of the VAST Cluster
+        audit_dir_name:
+          type: string
+          description: The name of the Audit Directory located at the root of the element store
+        read_access_users:
+          type: array
+          description: Users with read access to the audit directory
+          items:
+            type: string
+        read_access_users_groups:
+          type: array
+          description: Groups with read access to the audit directory
+          items:
+            type: string
+        max_file_size:
+          type: integer
+          description: The maximum audit file size in bytes
+        max_retention_period:
+          type: integer
+          description: The value of the maximum retention period
+        max_retention_timeunit:
+          type: string
+          description: The unit of the maximum retention period
+        protocols:
+          description: Global protocols to audit
+          type: array
+          items:
+            type: string
+        protocols_audit:
+          description: Global protocol audit settings
+          type: object
+          properties:
+            "log_full_path":
+              type: boolean
+            "log_username":
+              type: boolean
+            "create_delete_files_dirs_objects":
+              type: boolean
+            "modify_data_md":
+              type: boolean
+            "read_data":
+              type: boolean
+        use_smb_privileged_user:
+          type: boolean
+          description: Whether the SMB privileged user is enabled
+        smb_privileged_user_name:
+          type: string
+          description: The user name of the SMB privileged user`
+        use_smb_privileged_group:
+          type: boolean
+          description: Whether the SMB privileged group are enabled
+        smb_privileged_group_full_access:
+          type: boolean
+          description: When enabled the SMB privileged group has full access instead of read-only
+        smb_privileged_group_sid:
+          type: string
+          description: The SID of the SMB privileged group
+        smb_administrators_group_name:
+          type: string
+          description: The name of the SMB privileged group
 
   securitySchemes:
     bearerAuth:

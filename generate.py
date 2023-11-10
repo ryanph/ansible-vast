@@ -3,6 +3,7 @@
 import json
 import yaml
 import os
+import sys
 from jinja2 import Environment, FileSystemLoader
 from pprint import pprint
 
@@ -12,19 +13,23 @@ log = logging.getLogger('generate')
 
 # Helper function to convert OpenAPI spec types to Ansible types
 def convert_type(type_value):
-    if type_value == "string":
-        return "str"
-    if type_value == "boolean":
-        return "bool"
-    if type_value == "array":
-        return "list"
-    if type_value == "object":
-        return "dict"
-    if type_value == "integer":
-        return "int"
+
+    table = {
+        "string": "str",
+        "boolean": "bool",
+        "array": "list",
+        "object": "dict",
+        "integer": "int"
+    }
+
+    if type_value in table.keys():
+        return table[type_value]
+    elif type_value not in table.values():
+        logging.warning("Unable to convert type '{}'".format(type_value))
+
     return type_value
 
-# Helper function to build example substitutions for documentation from the demo playbook
+# Helper function to extract examples for documentation from the demo playbook
 def parse_examples(path="tests/demo_playbook.yml"):
 
     examples = dict()
@@ -33,17 +38,28 @@ def parse_examples(path="tests/demo_playbook.yml"):
     with open(path, "r") as f:
         playbook = yaml.safe_load(f)
 
+        # Find all examples and categorise by resource to 
+
         # Find the Create and Delete examples for each resource
         for task in playbook[0]['tasks']:
+            if '(' not in task['name']:
+                logging.info("Ignoring non-annotated task {}".format(task['name']))
+                continue
             modname = task['name'].split("(")[1][:-1]
+            if modname == "meta":
+                logging.info("Ignoring meta task {}".format(task['name']))
+                continue
             if modname == 'debug':
-                modfullname = 'ansible.builtin.debug'
+                logging.info("Ignoring debug task {}".format(modname))
+                continue
             else:
                 modfullname = "ryanph.vast.{}".format(modname)
             if 'vms_verify_ssl' in task[modfullname]:
                 del task[modfullname]['vms_verify_ssl']
             if modname not in _examples:
                 _examples[modname] = list()
+
+            logging.info("Adding task '{}' to examples for '{}' module".format(task['name'], modname))
             _examples[modname].append(task)
 
         # Build the example data
@@ -52,9 +68,19 @@ def parse_examples(path="tests/demo_playbook.yml"):
             for e in _examples[key]:
                 if 'vms_verify_ssl' in e:
                     del e['vms_verify_ssl']
-                examples[key].append(yaml.dump(e))
+                
+                examples[key].append(yaml.dump(e, sort_keys=False))
 
     return examples
+
+def parse_parameter_info(spec):
+
+    param_map = {}
+    for schema in spec['components']['schemas'].keys():
+        param_map[schema] = spec['components']['schemas'][schema]['properties']
+    return param_map
+    
+    
 
 if __name__ == "__main__":
 
@@ -75,6 +101,9 @@ if __name__ == "__main__":
     log.info("Extracting examples from demo playbook tests/demo_playbook.yml")
     examples = parse_examples()
 
+    log.info("Extracting parameter types and descriptions from OpenAPI spec for use in documentation")
+    parameter_info = parse_parameter_info(api_spec)
+
     # Generate galaxy.yml
     log.info("Generating galaxy.yml from template")
     try:
@@ -89,7 +118,7 @@ if __name__ == "__main__":
     log.info("Generating README.md from template")
     template = environment.get_template("readme.md.j2")
     with open("build/ryanph/vast/README.md", "w") as f:
-        f.write(template.render({"settings":settings,"examples":examples,"packageinfo":packageinfo}))
+        f.write(template.render({"settings":settings,"examples":examples,"packageinfo":packageinfo,"paraminfo":parameter_info}))
 
     # Generate module_utils.py
     log.info("Generating vast_utils.py")
@@ -176,6 +205,16 @@ if __name__ == "__main__":
                 options[opt]['required'] = False
                 required_if_options.append(opt)
 
+        if 'additional_options' in module_settings:
+            for opt in module_settings['additional_options'].keys():
+                options[opt] = {
+                    "name": opt,
+                    "required": module_settings['additional_options'][opt]['required'],
+                    "description": module_settings['additional_options'][opt]['description'],
+                    "type": convert_type(module_settings['additional_options'][opt]['type']),
+                    "default": module_settings['additional_options'][opt]['default'] if 'default' in module_settings['additional_options'][opt] else None
+                }
+
         if module_settings['query_only'] == False:
             options['state'] = {
                 "description": "The desired state of the resource",
@@ -184,6 +223,10 @@ if __name__ == "__main__":
                 "required": True,
                 "default": None
             }
+            if 'action_only' in module_settings and module_settings['action_only']:
+                options['state']['choices'].remove('absent')
+                options['state']['required'] = False
+                options['state']['default'] = "'present'"
 
         try:
             os.makedirs("build/ryanph/vast/plugins/modules")

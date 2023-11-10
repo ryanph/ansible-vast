@@ -7,9 +7,11 @@
 - hosts: all
   gather_facts: no
   connection: local
+  vars:
+    perform_creation: True
+    perform_deletion: True
 
   tasks:
-
 
     # Query Examples
 
@@ -28,11 +30,12 @@
         vms_verify_ssl: false
       register: group_query_result
     
+    # Todo: add assert
     - name: Log the SID returned (debug)
       ansible.builtin.debug: var=group_query_result.resource.sid
+  
 
     # Mixed NFS and SMB Example
-
     - name: Create a Mixed Protocol View Policy with SMB Auditing (viewpolicy)
       ryanph.vast.viewpolicy:
         name: mixed_policy
@@ -136,7 +139,8 @@
         protocols: ['NFS']
         vms_verify_ssl: false
         state: present
-  
+      register: nfs_view
+
     # Quota Example
 
     - name: Create a quota (quota)
@@ -225,3 +229,25 @@
         name: s3_user
         vms_verify_ssl: false
         state: absent
+
+    - name: End the play to prevent the following tasks from running (debug)
+      meta: end_play
+
+      # Permission Repair Example
+    - name: Bulk Permission Repair (permissionrepair)
+      ryanph.vast.permissionrepair:
+        view_id: 1
+        template_view_id: 2
+        template_dir_path: template/template_dir
+        template_file_path: template/template_file
+        target_path: path/to/folder/to/repair
+      register: repair_task
+    
+    - name: Wait for Bulk Permission Repair to complete (taskquery)
+      ryanph.vast.taskquery:
+        id: "{{ repair_task.resource.async_task.id }}"
+      register: task_status
+      until:
+        - task_status.resource.state != "RUNNING"
+      retries: 900
+      delay: 15

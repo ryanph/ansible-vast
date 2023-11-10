@@ -11,6 +11,7 @@ modules:
 
     protectionpolicy:
         query_only: False
+        action_only: False
         description: VAST Management Service (VMS) Protection Policy Management
         schema: ProtectionPolicy
         primary_key: id
@@ -40,6 +41,7 @@ modules:
 
     protectedpath:
         query_only: False
+        action_only: False
         description: VAST Management Service (VMS) Protected Path Management
         schema: ProtectedPath
         primary_key: id
@@ -66,6 +68,7 @@ modules:
         
     quota:
         query_only: False
+        action_only: False
         description: VAST Management Service (VMS) Quota Management
         schema: Quota
         primary_key: id
@@ -93,6 +96,7 @@ modules:
 
     user:
         query_only: False
+        action_only: False
         description: VAST Management Service (VMS) User Management
         schema: User
         primary_key: id
@@ -119,6 +123,7 @@ modules:
 
     viewpolicy:
         query_only: False
+        action_only: False
         description: VAST Management Service (VMS) View Policy Management
         schema: ViewPolicy
         primary_key: id
@@ -165,8 +170,40 @@ modules:
         param_specific_compare_funcs: {}
         no_compare_args: []
 
+    permissionrepair:
+        query_only: False
+        action_only: True
+        description: VAST Management Service (VMS) Permission Repair
+        schema: BulkPermissionRepairRequest
+        options:
+          - target_path
+          - template_dir_path
+          - template_file_path
+          - template_view_id
+        additional_options:
+          view_id:
+            type: int
+            required: True
+            description: The ID of the view containing the files with permissions to repair
+        ignore_trailing_domain_separator: []
+        sdk_module: ViewsApi
+        sdk_search_method: get_view_by_id
+        sdk_search_param_value: id
+        sdk_search_param_name: id
+        sdk_delete_method: None
+        sdk_create_method: start_bulk_permission_repair
+        sdk_create_param_primary_value: view_id
+        primary_key: async_task.id
+        sdk_patch_method: None
+        sdk_patch_argument: None
+        require_double_lookup: False
+        dict_convert_params: []
+        param_specific_compare_funcs: {}
+        no_compare_args: []
+
     view:
         query_only: False
+        action_only: False
         description: VAST Management Service (VMS) View Management
         schema: View
         primary_key: id
@@ -214,6 +251,7 @@ modules:
 
     userquery:
         query_only: True
+        action_only: False
         description: VAST Management Service (VMS) User Query
         schema: User
         options:
@@ -227,6 +265,7 @@ modules:
 
     groupquery:
         query_only: True
+        action_only: False
         description: VAST Management Service (VMS) Group Query
         schema: GroupData
         options:
@@ -240,6 +279,7 @@ modules:
 
     vippoolsquery:
         query_only: True
+        action_only: False
         description: VAST Management Service (VMS) VIP Pools Query
         schema: VIPPool
         options:
@@ -249,4 +289,18 @@ modules:
         sdk_search_method: list_vippools
         sdk_search_param_value: name
         sdk_search_param_name: name
+        no_compare_args: []
+
+    taskquery:
+        query_only: True
+        action_only: False
+        description: VAST Management Service (VMS) Async Task Query
+        schema: AsyncTask
+        options:
+            - id
+        ignore_trailing_domain_separator: []
+        sdk_module: TasksApi
+        sdk_search_method: get_vtask_by_id
+        sdk_search_param_value: id
+        sdk_search_param_name: id
         no_compare_args: []

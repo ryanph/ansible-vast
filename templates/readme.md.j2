@@ -41,7 +41,7 @@ For full documentation refer to `ansible-doc` after installing the collection.
 {{ value.description }}
 
 #### Arguments
-{% for option in value.options | sort %}- *{{ option }}*
+{% for option in value.options | sort %}- **{{ option }}**: _{{ paraminfo[value.schema][option].description }} ({{ paraminfo[value.schema][option].type }})_
 {%endfor%}
 #### Examples
 {% for example in examples[key] %}

@@ -42,7 +42,7 @@ from vastsdk.api import {{ settings.sdk_module }}
 from vastsdk.exceptions import NotFoundException
 from ansible.errors import AnsibleError
 from ansible.module_utils.basic import AnsibleModule
-{% if settings.param_specific_compare_funcs | length > 0 %}
+{% if settings.param_specific_compare_funcs | length > 0 %}{# .. #}
 from ansible_collections.ryanph.vast.plugins.module_utils.vast_utils import {% for key, value in settings.param_specific_compare_funcs.items() %}{{ value }}{% if not loop.last %},{% endif %}{% endfor %}
 {% endif %}
 
@@ -85,8 +85,29 @@ def run_module():
         vms_api_config.username = module.params['vms_username']
         vms_api_config.password = module.params['vms_password']
 
-    # Search for {{ settings.schema }} specified by the module params
     resource_api = {{ settings.sdk_module }}(ApiClient(vms_api_config))
+{% if settings.action_only == True %}
+
+    payload = dict()
+    for key in resource_keys:
+        if key in module.params and key not in ignore_when_null_keys:
+            payload[key] = module.params[key]
+        elif key in ignore_when_null_keys and module.params[key] is not None:
+            payload[key] = module.params[key]
+{% if settings.sdk_create_param_primary_value is defined %}
+    new_resource = resource_api.{{ settings.sdk_create_method }}(module.params['{{ settings.sdk_create_param_primary_value }}'], payload)
+{% else %}
+    new_resource = resource_api.{{ settings.sdk_create_method }}(payload)
+{% endif %}
+
+    # Convert the object returned to a dictionary containing the resource_keys
+    result['resource'] = new_resource.to_dict()
+
+    result['changed'] = True
+    result['message'] = "Created {{ name }} with {{ settings.primary_key }} {}".format(new_resource.{{ settings.primary_key }})
+    module.exit_json(**result)
+{% else %}
+    # Search for {{ settings.schema }} specified by the module params
     resource = resource_api.{{ settings.sdk_search_method }}({{ settings.sdk_search_param_name }}=module.params['{{ settings.sdk_search_param_value }}'])
 
 {% if settings.query_only == True %}
@@ -241,6 +262,7 @@ def run_module():
 
             module.exit_json(**result)
 {% endif %}{# Query Only #}
+{% endif %}{# Action Only #}
     module.exit_json(**result)
 
 def main():
